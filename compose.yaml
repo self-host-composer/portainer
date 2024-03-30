@@ -1,0 +1,41 @@
+version: "3.2"
+services:
+  agent:
+    hostname: tasks.agent
+    image: portainer/agent:2.17.1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.platform.os == linux
+    restart: unless-stopped
+    networks:
+      - agent_network
+    ports: []
+  portainer:
+    image: portainer/portainer-ce:2.17.1
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    ports:
+      - 9443:9443
+      - 9000:9000
+      - 8000:8000
+    volumes:
+      - portainer_data:/data
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    restart: unless-stopped
+    networks:
+      - agent_network
+    depends_on:
+      - agent
+networks:
+  agent_network: {}
+volumes:
+  portainer_data: null
